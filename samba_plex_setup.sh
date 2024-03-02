@@ -16,6 +16,10 @@ read @smbread @smbp
 read -p "What is your Samba group name? " @smbg
 read @smbg
 
+// Install wget
+
+dnf -y install wget
+
 // Create Samba user and groups
 useradd smbuser
 (echo SambaShare; echo SambaShare ) | smbpasswd -s $user smbuser
@@ -38,7 +42,7 @@ chcon -t samba_share_t /mnt/Data
 cp /etc/samba/smb.conf /etc/samba/smb.conf.bk
 nano /etc/samba/smb.conf
 cat > /etc/samba/smb.conf <<-EOF
-[Data]
+ [Data]
         path = /mnt/Data
         valid users = @ smb_group
         browsable = yes
@@ -69,16 +73,32 @@ dng -y install cifs-utils
 cat > /etc/fstab <<-EOF
 //192.168.0.28/d /mnt/Winshare                     cifs    _netdev,credentials=/etc/.credfile,dir_mode=0755,file_mode=0755,uid=500,gid=500 0 0
 cat > /etc/.credfile <<-EOF
-username=Axepop
-password=ToasterOven1!
-domain=TRON-HOME
+ username=Axepop
+ password=ToasterOven1!
+ domain=TRON-HOME
 
 // Plex setup
+sudo wget https://downloads.plex.tv/plex-media-server-new/1.32.5.7349-8f4248874/redhat/plexmediaserver-1.32.5.7349-8f4248874.x86_64.rpm
 firewall-cmd --zone=public --add-port=32400/tcp --permanent
 firewall-cmd --reload
 firewall-cmd --list-all
+
+
+systemctl enable plexmediaserver
+systemctl start plexmediaserver
+firewall-cmd --add-service=plex --zone=public --permanent
+firewall-cmd --reload
+
+
+
+// Configure Apache as a Reverse Proxy for Plex
+
+dnf install httpd -y
+sudo systemctl enable --now httpd
+sudo setsebool -P httpd_can_network_connect on
+
 cat > /etc/httpd/conf.d/plexmedia.conf <<-EOF
-<VirtualHost *:80>
+ <VirtualHost *:80>
    ServerName example.com
    ErrorDocument 404 /404.html
 
@@ -92,5 +112,9 @@ cat > /etc/httpd/conf.d/plexmedia.conf <<-EOF
         ProxyPass wss://localhost:32400/:/websockets/notifications
         ProxyPassReverse wss://localhost:32400/:/websockets/notifications
    </Location>
-</VirtualHost>
+ </VirtualHost>
+
+apachectl -t
+sudo systemctl reload httpd
+
 reboot
