@@ -1,3 +1,17 @@
+#!/bin/bash
+
+read -p 'Enter SMB user name: ' smbu
+echo "$smbu"
+read -p 'Enter SMB user password: ' smbp
+echo "$smbp"
+smbg=smb_group
+echo "$smbg"
+
+if [ 'yum list installed' | grep 'nano' -ne 'nano' ]
+then
+    yum install -y nano
+    echo "Nano editor has been installed"
+fi
 
 yum update -y
 
@@ -8,21 +22,18 @@ dnf -y install net-tools
 dnf config-manager --set-enabled powertools
 dnf config-manager --set-enabled crb
 
-//Get COnfigurtion Perameters
-read -p "What is your Samba user name? " @smbu
-read @smbu
-read -p "What is your Samba user password name? " @smbp
-read @smbread @smbp
-read -p "What is your Samba group name? " @smbg
-read @smbg
 
 // Install wget
+if [ 'yum list installed' | grep 'nano' -ne 'wget' ]
+    then
+    dnf -y install wget
+    echo "WGET has been installed"
+fi
 
-dnf -y install wget
 
 // Create Samba user and groups
-useradd smbuser
-(echo SambaShare; echo SambaShare ) | smbpasswd -s $user smbuser
+useradd $smbu
+(echo SambaShare; echo SambaShare ) | smbpasswd -s $smbu $smbp
 groupadd @smbg
 usermod -g @smbg @smbu
 
@@ -44,13 +55,13 @@ nano /etc/samba/smb.conf
 cat > /etc/samba/smb.conf <<-EOF
  [Data]
         path = /mnt/Data
-        valid users = @ smb_group
+        valid users = @smb_group
         browsable = yes
         writable = yes
         guest ok = yes
         read only = no
 
-firewal-cmd --permanent --add-service=samba
+firewall-cmd --permanent --add-service=samba
 firewall-cmd --zone=public --add-port=80/udp --permanent
 firewall-cmd --zone=public --add-port=80/tcp --permanent
 firewall-cmd --zone=public --add-port=137/udp --permanent
@@ -73,9 +84,9 @@ dng -y install cifs-utils
 cat > /etc/fstab <<-EOF
 //192.168.0.28/d /mnt/Winshare                     cifs    _netdev,credentials=/etc/.credfile,dir_mode=0755,file_mode=0755,uid=500,gid=500 0 0
 cat > /etc/.credfile <<-EOF
- username=Axepop
- password=ToasterOven1!
- domain=TRON-HOME
+ username=[YourUserName]
+ password=[YourUserPassword]
+ domain=[YourDomain]
 
 // Plex setup
 sudo wget https://downloads.plex.tv/plex-media-server-new/1.32.5.7349-8f4248874/redhat/plexmediaserver-1.32.5.7349-8f4248874.x86_64.rpm
